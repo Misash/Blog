@@ -51,6 +51,26 @@ app.post("/compose",(req,res)=>{
 
 })
 
+app.get('/posts/:postName', function (req, res) {
+
+
+  let found = false 
+
+  for(var i=0; i< posts.length ; i++){
+    if(posts[i].title == req.params.postName){
+      found = true 
+      break
+    }
+  }
+
+  if(found){
+    console.log("match!")
+  }else{
+    console.log("no found")
+  }
+
+
+})
 
 
 
