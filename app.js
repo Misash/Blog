@@ -4,6 +4,30 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const _ = require("lodash")
+const mongoose = require("mongoose")
+
+// Start moongose 
+
+mongoose.connect("mongodb://localhost:27017/blogDB", {useNewUrlParser: true});
+
+const db = mongoose.connection;
+  db.on("error", console.error.bind(console, "DB connection error: "));
+  db.once("open", function () {
+  console.log("DB Connected successfully");
+});
+
+
+// Create Schema
+
+const postSchema = new mongoose.Schema({
+  title: String ,
+  body: String
+})
+
+const Post = mongoose.model("Post",postSchema)
+
+
+
 
 const homeStartingContent = "Lacus vel facilisis volutpat est velit egestas dui id ornare. Semper auctor neque vitae tempus quam. Sit amet cursus sit amet dictum sit amet justo. Viverra tellus in hac habitasse. Imperdiet proin fermentum leo vel orci porta. Donec ultrices tincidunt arcu non sodales neque sodales ut. Mattis molestie a iaculis at erat pellentesque adipiscing. Magnis dis parturient montes nascetur ridiculus mus mauris vitae ultricies. Adipiscing elit ut aliquam purus sit amet luctus venenatis lectus. Ultrices vitae auctor eu augue ut lectus arcu bibendum at. Odio euismod lacinia at quis risus sed vulputate odio ut. Cursus mattis molestie a iaculis at erat pellentesque adipiscing.";
 const aboutContent = "Hac habitasse platea dictumst vestibulum rhoncus est pellentesque. Dictumst vestibulum rhoncus est pellentesque elit ullamcorper. Non diam phasellus vestibulum lorem sed. Platea dictumst quisque sagittis purus sit. Egestas sed sed risus pretium quam vulputate dignissim suspendisse. Mauris in aliquam sem fringilla. Semper risus in hendrerit gravida rutrum quisque non tellus orci. Amet massa vitae tortor condimentum lacinia quis vel eros. Enim ut tellus elementum sagittis vitae. Mauris ultrices eros in cursus turpis massa tincidunt dui.";
@@ -17,11 +41,16 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
 
-const posts = []
-
 
 app.get("/", (req, res) => {
-  res.render("home", { startContent: homeStartingContent, posts: posts })
+
+  Post.find({},(err,posts)=>{
+    if(err){
+      console.log(err)
+    }else{
+      res.render("home", { startContent: homeStartingContent, posts: posts })
+    }
+  })
 
 })
 
@@ -41,30 +70,31 @@ app.get("/compose", (req, res) => {
 app.post("/compose", (req, res) => {
 
 
-  const post = {
+  const post = new Post({
     title: req.body.postTitle,
     body: req.body.postContent
-  }
+  })
 
-  posts.push(post)
-
-  res.redirect("/")
+  post.save(function(err){
+    if (!err){
+      res.redirect("/");
+    }
+  })
 
 })
 
-app.get('/posts/:postName', function (req, res) {
+app.get('/posts/:id', function (req, res) {
 
 
-  for (let i = 0; i < posts.length; i++) {
-    if (_.lowerCase(posts[i].title) == _.lowerCase(req.params.postName)) {
+  Post.findOne({_id: req.params.id}, (err,post)=>{
+    if(err){
+      console.log(err)
+    }else{
       console.log("match!")
-      res.render("post", { title: posts[i].title, body: posts[i].body })
-
-      return
+      console.log(post)
+      res.render("post", { title: post.title, body: post.body })
     }
-  }
-
-  console.log("no found")
+  })
 
 })
 
